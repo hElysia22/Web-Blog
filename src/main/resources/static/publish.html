@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>发布文章</title>
+    <style>
+        body{max-width:600px;margin:50px auto;font-family: Arial}
+        input,textarea{width:100%;margin:10px 0;padding:12px;box-sizing:border-box}
+        button{padding:12px 20px;background:#007bff;color:white;border:none;font-size:16px}
+    </style>
+    <script>
+        window.onload = function(){
+            if(!localStorage.token){
+                alert("请先登录！");
+                location.href="login.html";
+            }
+        }
+    </script>
+    <script src="/js/utils.js"></script>
+</head>
+<body>
+<h2>发布文章</h2>
+<input id="title" placeholder="标题">
+<textarea id="content" rows="10" placeholder="内容"></textarea>
+<button onclick="publish()">发布</button>
+
+<script>
+    async function publish() {
+        let title = document.getElementById('title').value.trim()
+        let content = document.getElementById('content').value.trim()
+        let userId = ""
+        const token = localStorage.token
+        const  btn = document.querySelector('button[onclick="publish()"]');
+        btn.disabled = true;
+        btn.textContent = "发布中";
+
+        try{
+            if(token){
+                let payload = parseJwt(token);
+                userId = payload.id;
+            }
+
+            if(!title || !content){
+                alert("标题和内容不能为空！");
+                return;
+            }
+
+            try {
+                let res = await fetch(`${BASE_URL}/article/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': token
+                    },
+                    body: JSON.stringify({title, content})
+                })
+
+                if(!res.ok){
+                    throw new Error('网络请求失败');
+                }
+                res = await res.json();
+
+                if (res.success) {
+                    alert("发布成功")
+                    location.href='index.html'
+                }else{
+                    alert("发布失败")
+                }
+            }catch (err){
+                alert('发布失败'+err.message)
+            }
+        }finally {
+            btn.disabled = false;
+            btn.textContent = "发布";
+        }
+    }
+</script>
+</body>
+</html>
