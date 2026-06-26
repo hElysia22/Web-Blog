@@ -22,21 +22,3 @@ function getCurrentUser() {
     return payload || null;
 }
 
-/**
- * 判断是否已登录
- * @returns boolean
- */
-function isLogin() {
-    return getCurrentUser() != null;
-}
-
-/**
- * 退出登录
- */
-function logout() {
-    if (confirm("确定退出登录？")) {
-        localStorage.removeItem("token");
-        alert("退出成功！");
-        location.reload();
-    }
-}

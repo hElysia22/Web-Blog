@@ -1,15 +1,17 @@
 package com.blog.entity;
+
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
-import java.time.LocalDateTime;
+
+import java.lang.reflect.Type;
 
 @Data
-public class User {
+@TableName("sys_role")
+public class SysRole {
     @TableId(type = IdType.AUTO)
     private Long id;
-    private String username;
-    private String password;
-    private LocalDateTime createTime;
-    private Boolean isAdmin;
+    private String roleCode;
+    private String roleName;
 }

@@ -26,20 +26,14 @@
 
 <script>
     async function publish() {
-        let title = document.getElementById('title').value.trim()
-        let content = document.getElementById('content').value.trim()
-        let userId = ""
-        const token = localStorage.token
+        let title = document.getElementById('title').value.trim();
+        let content = document.getElementById('content').value.trim();
+        const token = localStorage.token;
         const  btn = document.querySelector('button[onclick="publish()"]');
         btn.disabled = true;
         btn.textContent = "发布中";
 
         try{
-            if(token){
-                let payload = parseJwt(token);
-                userId = payload.id;
-            }
-
             if(!title || !content){
                 alert("标题和内容不能为空！");
                 return;
@@ -50,7 +44,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': token
+                        'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify({title, content})
                 })

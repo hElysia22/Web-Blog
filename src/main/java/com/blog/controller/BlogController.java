@@ -1,16 +1,21 @@
 package com.blog.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.blog.annotation.RequirePerm;
 import com.blog.entity.Article;
+import com.blog.entity.LoginUser;
 import com.blog.entity.User;
 import com.blog.service.ArticleService;
 import com.blog.service.UserService;
 import com.blog.util.JwtUtil;
+import com.blog.util.UserContextUtil;
+import org.apache.ibatis.annotations.Param;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api")
@@ -42,36 +47,32 @@ public class BlogController {
     public Map<String, Object> login(@RequestBody User user) {
         Map<String, Object> res = new HashMap<>();
         User loginUser = userService.login(user.getUsername(), user.getPassword());
-        if (loginUser != null) {
-            Map<String, Object> map = new HashMap<>();
-            map.put("username", loginUser.getUsername());
-            map.put("id", loginUser.getId());
-            String token = jwtUtil.generateToken(map);
+        if(loginUser!=null)
+        {
+            Map<String, Object> tokenMap = new HashMap<>();
+            tokenMap.put("username", loginUser.getUsername());
+            tokenMap.put("id", loginUser.getId());
+            tokenMap.put("isAdmin", loginUser.getIsAdmin());
+            String token = jwtUtil.generateToken(tokenMap);
 
-            res.put("token", token);
             res.put("success", true);
-        } else {
+            res.put("token", token);
+        }else {
             res.put("success", false);
-            res.put("msg", "用户名或密码错误");
+            res.put("msg", "账号或密码错误");
         }
         return res;
     }
 
     // 发布文章
     @PostMapping("/article/add")
+    @RequirePerm("article:publish")
     public Map<String, Object> addArticle(
-            @RequestBody Article article,
-            @RequestHeader("Authorization") String token) {
+            @RequestBody Article article) {
 
         Map<String, Object> res = new HashMap<>();
-
-        if (token == null || !jwtUtil.validateToken(token))
-        {
-            res.put("success",false);
-            res.put("msg", "无权限：请先登录");
-            return res;
-        }
-        article.setUserId(jwtUtil.extractId(token));
+        LoginUser loginUser = UserContextUtil.getLoginUser();
+        article.setUserId(loginUser.getUserId());
         article.setCreateTime(LocalDateTime.now());
         res.put("success", articleService.add(article));
         return res;
@@ -100,25 +101,54 @@ public class BlogController {
         return res;
     }
 
+    @PutMapping("/article/edit/{artId}")
+    @RequirePerm("article:edit")
+    public  Map<String, Object> editArticle(
+            @RequestBody Article article,
+            @PathVariable Long artId){
+
+        Map<String,Object> res = new HashMap<>();
+
+        LoginUser loginUser = UserContextUtil.getLoginUser();
+        Article dbArticle = articleService.getById(artId);
+        if(dbArticle == null)
+        {
+            res.put("success", false);
+            res.put("msg", "文章不存在");
+            return res;
+        }
+        if(dbArticle.getUserId() != loginUser.getUserId())
+        {
+            res.put("success", false);
+            res.put("msg", "非作者无法修改");
+            return res;
+        }
+        article.setId(artId);
+        res.put("success", articleService.edit(article));
+        return res;
+    }
 
     @DeleteMapping("/article/delete/{id}")
+    @RequirePerm("article:remove")
     public Map<String, Object> deleteArticle(
-            @PathVariable Long id,
-            @RequestHeader("Authorization") String token) {
+            @PathVariable Long id) {
 
         Map<String, Object> res = new HashMap<>();
 
-        if (token == null || !jwtUtil.validateToken(token)) {
-            res.put("success", false);
-            res.put("msg", "无权限：请先登录");
-            return res;
-        }
-
-        Long userId = jwtUtil.extractId(token);
+        LoginUser loginUser = UserContextUtil.getLoginUser();
+        Long userId = loginUser.getUserId();
         Article article = articleService.getById(id);
         if (article == null) {
             res.put("success", false);
             res.put("msg", "文章不存在");
+            return res;
+        }
+
+        if(loginUser.getIsAdmin())
+        {
+            boolean flag = articleService.deleteById(id);
+            res.put("success", flag);
+            res.put("msg", flag ? "删除成功" : "删除失败");
             return res;
         }
 

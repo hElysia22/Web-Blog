@@ -17,6 +17,11 @@ public class ArticleService {
         return articleMapper.insert(article) > 0;
     }
 
+    public boolean edit(Article article){
+        int rows = articleMapper.updateById(article);
+        return rows > 0;
+    }
+
     // 查询所有文章（按时间倒序）
     public Page<Article> getArticlePage(int page, int pageSize) {
         // 构建分页对象 Page(当前页, 每页条数)
