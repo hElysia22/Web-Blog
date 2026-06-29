@@ -11,11 +11,16 @@ import com.blog.util.JwtUtil;
 import com.blog.util.UserContextUtil;
 import org.apache.ibatis.annotations.Param;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
 import javax.annotation.Resource;
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -62,6 +67,47 @@ public class BlogController {
             res.put("msg", "账号或密码错误");
         }
         return res;
+    }
+
+    @PostMapping("/upload")
+    public Map<String, Object> upload(@RequestParam("file") MultipartFile file,
+                                      @RequestHeader("Authorization") String token)
+    {
+        Map<String, Object> res = new HashMap<>();
+        if(token == null || !jwtUtil.validateToken(token))
+        {
+            res.put("success", false);
+            res.put("msg", "请先登录");
+            return res;
+        }
+        String uploadPath = "D:/upload/";
+        File filePath = new File(uploadPath);
+        if(!filePath.exists())
+        {
+            filePath.mkdirs();
+        }
+
+        String originalFileName = file.getOriginalFilename();
+        if(file.isEmpty() || !originalFileName.contains("."))
+        {
+            res.put("success", false);
+            res.put("msg", "未上传文件 || 文件名要带后缀");
+            return res;
+        }
+        //后缀
+        String suffix = originalFileName.substring(originalFileName.lastIndexOf('.'));
+        String newFileName = UUID.randomUUID() + suffix;
+        File targetPath = new File(uploadPath + newFileName);
+        try{
+            file.transferTo(targetPath);
+            res.put("success", true);
+            res.put("msg", "/upload/" + newFileName);
+            return res;
+        }catch (IOException e){
+            res.put("success", false);
+            res.put("msg", e.getMessage());
+            return res;
+        }
     }
 
     // 发布文章
