@@ -61,6 +61,13 @@ public class JwtUtil {
         return extractClaims(token).get("username", String.class);
     }
 
+    /**
+     * 从 Token 中获取是否是管理员
+     */
+    public Boolean extractIsAdmin(String token){ return  extractClaims(token).get("isAdmin", Boolean.class);}
+    /**
+     * 从 Token 中获取id
+     */
     public Long extractId(String token) {
         return extractClaims(token).get("id", Long.class);
     }

@@ -199,11 +199,14 @@
         const res = await fetch(`${BASE_URL}/article/list?page=${page}&pageSize=${pageSize}`).then(res => res.json());
         const list = document.getElementById('list');
         let currentUserId = '';
+        let isAdmin = false;
         const token = localStorage.token;
 
         if(token){
             const payload = parseJwt(token);
+            console.log("payload.isAdmin：", payload.isAdmin);
             currentUserId = payload?.id || '';
+            isAdmin = payload?.isAdmin || false;
         }
 
         list.innerHTML = "";
@@ -216,7 +219,8 @@
                 <div class="time">${art.createTime}</div>
                 <div class="content">${art.content}</div>
             </div>
-            ${currentUserId && art.userId == currentUserId ? `<button class="btn del-btn" onclick="deleteArticle(${art.id})">删除</button>` : ''}
+            ${(currentUserId && art.userId == currentUserId) || isAdmin ? `<button class="btn del-btn" onclick="deleteArticle(${art.id})">删除</button>` : ''}
+            ${currentUserId && art.userId == currentUserId ? `<button class="btn edit-btn"  onclick='EditData(${JSON.stringify(art)})'>编辑</button>` : ''}
         </div>`
         });
 
@@ -269,6 +273,16 @@
         paginationEl.appendChild(nextBtn);
     }
 
+    function EditData(art){
+        const artData = {
+            "artId" : art.id,
+            "title" : art.title,
+            "content" : art.content
+        }
+        localStorage.setItem("currArt", JSON.stringify(artData));
+        location.href = "edit.html";
+    }
+
     async function deleteArticle(id) {
         if (!confirm("确定删除这篇文章吗？删除后无法恢复！")) return;
         const token = localStorage.token;
@@ -281,7 +295,7 @@
             const res = await fetch(`${BASE_URL}/article/delete/${id}`, {
                 method: "DELETE",
                 headers:{
-                    "Authorization": token
+                    "Authorization": 'Bearer ' + token
                 }
             }).then(res => res.json());
 
@@ -294,6 +308,17 @@
             }
         } catch (error) {
             alert("删除失败，服务器连接异常");
+        }
+    }
+
+    /**
+     * 退出登录
+     */
+    function logout() {
+        if (confirm("确定退出登录？")) {
+                localStorage.removeItem("token");
+                alert("退出成功！");
+                location.reload();
         }
     }
 

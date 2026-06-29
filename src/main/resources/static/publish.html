@@ -6,7 +6,12 @@
     <style>
         body{max-width:600px;margin:50px auto;font-family: Arial}
         input,textarea{width:100%;margin:10px 0;padding:12px;box-sizing:border-box}
-        button{padding:12px 20px;background:#007bff;color:white;border:none;font-size:16px}
+        button{
+            padding: 10px 15px;
+            background:#007bff;
+            color:white;
+            border:none;
+            font-size:16px}
     </style>
     <script>
         window.onload = function(){
@@ -22,24 +27,57 @@
 <h2>发布文章</h2>
 <input id="title" placeholder="标题">
 <textarea id="content" rows="10" placeholder="内容"></textarea>
+<div id="uploadFile" style="display: flex; align-items: center; gap: 10px;">
+    <input id="file" type="file">
+    <button onclick="uploadFile()">上传文件</button>
+</div>
 <button onclick="publish()">发布</button>
 
 <script>
+    async function uploadFile()
+    {
+        let file = document.getElementById("file").files[0];
+        if(file == null)
+        {
+            alert("请先选择文件");
+            return;
+        }
+        let formData = new FormData();
+        formData.append("file", file);
+
+        let token = localStorage.token;
+        if(!token)
+        {
+            alert("请先登录");
+            return;
+        }
+        let res = await fetch(`${BASE_URL}/upload`,{
+            method: 'POST',
+            headers:{
+                "Authorization": 'Bearer ' + token
+            },
+            body: formData
+        }).then(res => res.json());
+        if(res.success)
+        {
+            let box = document.getElementById('uploadFile');
+            box.innerHTML += `<a style="color: green">${res?.msg} Success</a>`;
+        }else{
+            let box = document.getElementById('uploadFile');
+            box.innerHTML += `<a style="color: red">${res?.msg}</a>`;
+        }
+
+    }
+
     async function publish() {
-        let title = document.getElementById('title').value.trim()
-        let content = document.getElementById('content').value.trim()
-        let userId = ""
-        const token = localStorage.token
+        let title = document.getElementById('title').value.trim();
+        let content = document.getElementById('content').value.trim();
+        const token = localStorage.token;
         const  btn = document.querySelector('button[onclick="publish()"]');
         btn.disabled = true;
         btn.textContent = "发布中";
 
         try{
-            if(token){
-                let payload = parseJwt(token);
-                userId = payload.id;
-            }
-
             if(!title || !content){
                 alert("标题和内容不能为空！");
                 return;
@@ -50,7 +88,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': token
+                        'Authorization': 'Bearer ' + token
                     },
                     body: JSON.stringify({title, content})
                 })

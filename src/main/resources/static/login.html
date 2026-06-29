@@ -14,8 +14,8 @@
 </head>
 <body>
 <h2>登录</h2>
-<input id="username" placeholder="用户名">
-<input id="password" type="password" placeholder="密码">
+<input id="username" placeholder="用户名" required>
+<input id="password" type="password" placeholder="密码" required>
 <button onclick="login()">登录</button>
 <button class="btn-gray" onclick="window.location='register.html'">去注册</button>
 <button class="btn-green" onclick="window.location='index.html'">博客首页</button>
@@ -31,19 +31,19 @@
         }
 
         try {
-            let res = await fetch(`${BASE_URL}/login`, {
+            let res = await fetch(`${BASE_URL}/login`,{
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                headers: {'Content-Type' : 'application/json'},
                 body: JSON.stringify({username, password})
             });
-            if (!res.ok) throw new Error('网络请求失败'); // 处理非200状态码
+            if(!res.ok) throw new Error("网络请求错误");
             res = await res.json();
-            if (res.success) {
+            if(res.success){
                 localStorage.token = res.token;
-                alert('登录成功')
-                location.href="index.html";
-            } else {
-                alert(res.msg);
+                alert("登录成功");
+                location.href = "index.html";
+            }else{
+                alert("账号不存在");
             }
         } catch (err) {
             alert('登录失败：' + err.message);
